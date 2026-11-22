@@ -1,373 +1,373 @@
 // ==========================================
-// ТІЛАШАР — ПАЦИЕНТТЕР БАЗАСЫ
+// ТІЛАШАР — PDF ЕСЕП ЖҮЙЕСІ
 // ==========================================
 
-function getPatients() {
-  return JSON.parse(localStorage.getItem("patientsDatabase") || "[]");
+function getReportPatient() {
+  const patients = JSON.parse(
+    localStorage.getItem("patientsDatabase") || "[]"
+  );
+
+  const activeId = localStorage.getItem("activePatientId");
+
+  return patients.find(p => p.id === activeId) || null;
 }
 
-function savePatients(patients) {
-  localStorage.setItem("patientsDatabase", JSON.stringify(patients));
+function getReportCard() {
+  const patient = getReportPatient();
+
+  if (patient && patient.speechCard) {
+    return patient.speechCard;
+  }
+
+  const data = JSON.parse(
+    localStorage.getItem("platformData") || "{}"
+  );
+
+  return data.speechCard || {};
 }
 
-function getActivePatientId() {
-  return localStorage.getItem("activePatientId");
+function getReportValue(value) {
+  return value === undefined || value === null || value === ""
+    ? "Толтырылмаған"
+    : String(value);
 }
 
-function setActivePatientId(id) {
-  localStorage.setItem("activePatientId", id);
-}
+// ==========================================
+// PDF ЕСЕПТІ ҚАЛЫПТАСТЫРУ
+// ==========================================
 
-// Пациенттер бөлімін құру
-function renderPatients() {
-  const container = document.getElementById("speechCardContainer");
-  if (!container) return;
+function generatePatientReport() {
+  const patient = getReportPatient();
+  const card = getReportCard();
 
-  const patients = getPatients();
-  const activeId = getActivePatientId();
+  if (!patient && !card.fullName) {
+    alert("Алдымен пациентті таңдап, сөйлеу картасын толтырыңыз!");
+    return;
+  }
 
-  container.innerHTML = `
-    <div class="patients-header">
-      <h2>👥 Пациенттер базасы</h2>
-      <p>Пациенттердің жеке мәліметтері мен сөйлеу карталарын басқару</p>
-    </div>
+  const ratings = [
+    ["Сөйлеуді түсіну", card.understanding],
+    ["Сөздік қоры және заттарды атау", card.vocabulary],
+    ["Ауызша сөйлеу", card.speech],
+    ["Қайталау", card.repetition],
+    ["Оқу", card.reading],
+    ["Жазу", card.writing]
+  ];
 
-    <div class="patients-actions">
-      <button onclick="createNewPatient()">
-        ＋ Жаңа пациент қосу
-      </button>
-    </div>
+  const validScores = ratings
+    .filter(item => item[1] !== undefined && item[1] !== "")
+    .map(item => Number(item[1]));
 
-    <div class="patients-search">
-      <input
-        type="search"
-        id="patientSearch"
-        placeholder="Пациенттің аты-жөнін іздеу..."
-        oninput="filterPatients()"
-      >
-    </div>
+  const total = validScores.reduce((sum, score) => sum + score, 0);
+  const max = validScores.length * 3;
 
-    <div id="patientsList">
-      ${patients.length ? patients.map(patient => `
-        <div class="patient-card">
-          <div>
-            <h3>${escapeCard(patient.fullName || "Аты-жөні көрсетілмеген")}</h3>
-            <p>Жасы: ${escapeCard(patient.age || "Көрсетілмеген")}</p>
-            <small>Тіркелген күні: ${escapeCard(patient.createdAt || "—")}</small>
-          </div>
+  const scoreRows = ratings.map(item => `
+    <tr>
+      <td>${item[0]}</td>
+      <td>${item[1] === undefined || item[1] === ""
+        ? "Бағаланбаған"
+        : item[1] + " / 3"}
+      </td>
+    </tr>
+  `).join("");
 
-          <div class="patient-buttons">
-            <button onclick="openPatient('${patient.id}')">
-              Картаны ашу
-            </button>
+  const communication = [
+    ["oral", "Ауызша сөйлеу"],
+    ["gesture", "Ым-ишара"],
+    ["writingMethod", "Жазу арқылы"],
+    ["pictures", "Суреттер арқылы"],
+    ["board", "Коммуникативтік тақта"]
+  ]
+    .filter(item => card[item[0]])
+    .map(item => item[1])
+    .join(", ") || "Көрсетілмеген";
 
-            <button class="patient-delete"
-              onclick="deletePatient('${patient.id}')">
-              🗑
-            </button>
-          </div>
-        </div>
-      `).join("") : `
-        <div class="patients-empty">
-          <span>📂</span>
-          <h3>Пациенттер әзірге жоқ</h3>
-          <p>Жаңа пациент қосу батырмасын басыңыз.</p>
-        </div>
-      `}
-    </div>
+  const reportWindow = window.open("", "_blank");
 
-    <div id="patientFormArea"></div>
-    <div id="patientSpeechCard"></div>
-  `;
-}
+  if (!reportWindow) {
+    alert("Есеп терезесі ашылмады. Браузердің қалқымалы терезелерге рұқсатын тексеріңіз.");
+    return;
+  }
 
-// Жаңа пациент қосу
-function createNewPatient() {
-  const area = document.getElementById("patientFormArea");
+  reportWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="kk">
+    <head>
+      <meta charset="UTF-8">
+      <title>Тілашар — сөйлеу картасы</title>
 
-  area.innerHTML = `
-    <div class="patient-form">
-      <h3>Жаңа пациент тіркеу</h3>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          color: #222;
+          padding: 30px;
+          line-height: 1.5;
+        }
 
-      <label>Аты-жөні
-        <input id="newPatientName" placeholder="Аты-жөнін енгізіңіз">
-      </label>
+        h1, h2 {
+          text-align: center;
+        }
 
-      <label>Жасы
-        <input id="newPatientAge" type="number" min="18" placeholder="Жасы">
-      </label>
+        h1 {
+          color: #5945a8;
+          font-size: 25px;
+        }
 
-      <label>Тіркелген күні
-        <input id="newPatientDate" type="date">
-      </label>
+        h2 {
+          font-size: 18px;
+          margin-top: 28px;
+          border-bottom: 1px solid #aaa;
+          padding-bottom: 7px;
+        }
 
-      <div class="patient-buttons">
-        <button onclick="saveNewPatient()">Сақтау</button>
-        <button class="patient-cancel"
-          onclick="document.getElementById('patientFormArea').innerHTML=''">
-          Болдырмау
-        </button>
+        .subtitle {
+          text-align: center;
+          color: #666;
+        }
+
+        .info {
+          margin-top: 25px;
+          padding: 15px;
+          border: 1px solid #ddd;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 12px;
+        }
+
+        th, td {
+          border: 1px solid #ccc;
+          padding: 10px;
+          text-align: left;
+        }
+
+        th {
+          background: #eeeafb;
+        }
+
+        .note {
+          min-height: 35px;
+          border-bottom: 1px dotted #aaa;
+          padding: 8px 0;
+          white-space: pre-wrap;
+        }
+
+        .signature {
+          margin-top: 45px;
+          display: flex;
+          justify-content: space-between;
+        }
+
+        .score {
+          background: #f1efff;
+          padding: 15px;
+          margin-top: 15px;
+        }
+
+        @media print {
+          body {
+            padding: 10px;
+          }
+
+          .no-print {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+
+    <body>
+
+      <h1>«ТІЛАШАР» ЛОГОПЕДИЯЛЫҚ КАБИНЕТІ</h1>
+
+      <p class="subtitle">
+        Афазиясы бар ересектерге арналған электронды сөйлеу картасы
+      </p>
+
+      <div class="info">
+        <p><b>Аты-жөні:</b> ${escapeCard(getReportValue(card.fullName))}</p>
+        <p><b>Жасы:</b> ${escapeCard(getReportValue(card.age))}</p>
+        <p><b>Тексеру күні:</b> ${escapeCard(getReportValue(card.date))}</p>
+        <p><b>Логопед:</b> ${escapeCard(getReportValue(card.logoped))}</p>
+        <p><b>Бұзылыстың басталған уақыты:</b>
+          ${escapeCard(getReportValue(card.onset))}
+        </p>
       </div>
-    </div>
-  `;
 
-  document.getElementById("newPatientDate").value =
-    new Date().toISOString().slice(0, 10);
+      <h2>1. Жалпы бақылау</h2>
+
+      <p><b>Қарым-қатынас:</b>
+        ${escapeCard(getReportValue(card.communication))}
+      </p>
+
+      <p><b>Нұсқауды қабылдауы:</b>
+        ${escapeCard(getReportValue(card.instruction))}
+      </p>
+
+      <p><b>Тапсырмаға қатысуы:</b>
+        ${escapeCard(getReportValue(card.participation))}
+      </p>
+
+      <p><b>Шаршағыштығы:</b>
+        ${escapeCard(getReportValue(card.fatigue))}
+      </p>
+
+      <p><b>Ескертпе:</b>
+        ${escapeCard(getReportValue(card.generalNote))}
+      </p>
+
+      <h2>2. Сөйлеу дағдыларын бағалау</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Бағалау бағыты</th>
+            <th>Нәтиже</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${scoreRows}
+        </tbody>
+      </table>
+
+      <div class="score">
+        <b>Жалпы жиналған балл:</b>
+        ${total} / ${max || 0}
+        <br>
+        <small>
+          Бұл балл тек толтырылған көрсеткіштер бойынша есептеледі.
+          Ол афазияның медициналық ауырлық дәрежесін анықтамайды.
+        </small>
+      </div>
+
+      <h2>3. Қарым-қатынас тәсілдері</h2>
+      <p>${escapeCard(communication)}</p>
+
+      <h2>4. Қосымша бақылау</h2>
+
+      <p><b>Дыбыс айту:</b>
+        ${escapeCard(getReportValue(card.pronunciation))}
+      </p>
+
+      <p><b>Сөйлеу қарқыны:</b>
+        ${escapeCard(getReportValue(card.tempo))}
+      </p>
+
+      <p><b>Дауыс:</b>
+        ${escapeCard(getReportValue(card.voice))}
+      </p>
+
+      <p><b>Қимыл-қозғалыс:</b>
+        ${escapeCard(getReportValue(card.movement))}
+      </p>
+
+      <p><b>Тыныс алу мен сөйлеуді үйлестіру:</b>
+        ${escapeCard(getReportValue(card.breathing))}
+      </p>
+
+      <h2>5. Логопедиялық қорытынды</h2>
+
+      <p><b>Сақталған дағдылар:</b></p>
+      <div class="note">${escapeCard(getReportValue(card.preserved))}</div>
+
+      <p><b>Қиындықтар:</b></p>
+      <div class="note">${escapeCard(getReportValue(card.difficulties))}</div>
+
+      <p><b>Түзету бағыттары:</b></p>
+      <div class="note">${escapeCard(getReportValue(card.directions))}</div>
+
+      <p><b>Ұсыныстар:</b></p>
+      <div class="note">${escapeCard(getReportValue(card.recommendations))}</div>
+
+      <p><b>Қорытынды:</b></p>
+      <div class="note">${escapeCard(getReportValue(card.conclusion))}</div>
+
+      <h2>6. Даму динамикасы</h2>
+
+      <p><b>Бастапқы тексеру:</b>
+        ${escapeCard(getReportValue(card.initialDate))}
+      </p>
+      <p>${escapeCard(getReportValue(card.initialNote))}</p>
+
+      <p><b>Аралық тексеру:</b>
+        ${escapeCard(getReportValue(card.middleDate))}
+      </p>
+      <p>${escapeCard(getReportValue(card.middleNote))}</p>
+
+      <p><b>Қорытынды тексеру:</b>
+        ${escapeCard(getReportValue(card.finalDate))}
+      </p>
+      <p>${escapeCard(getReportValue(card.finalNote))}</p>
+
+      <div class="signature">
+        <span>Логопед: __________________</span>
+        <span>Күні: ______________</span>
+      </div>
+
+      <br>
+
+      <button class="no-print" onclick="window.print()">
+        PDF сақтау / Басып шығару
+      </button>
+
+    </body>
+    </html>
+  `);
+
+  reportWindow.document.close();
 }
-
-// Пациентті сақтау
-function saveNewPatient() {
-  const name = document.getElementById("newPatientName").value.trim();
-  const age = document.getElementById("newPatientAge").value;
-  const date = document.getElementById("newPatientDate").value;
-
-  if (!name) {
-    alert("Пациенттің аты-жөнін енгізіңіз!");
-    return;
-  }
-
-  const patients = getPatients();
-
-  const patient = {
-    id: "patient_" + Date.now(),
-    fullName: name,
-    age: age,
-    createdAt: date || new Date().toLocaleDateString("kk-KZ"),
-    speechCard: {
-      fullName: name,
-      age: age,
-      date: date
-    }
-  };
-
-  patients.push(patient);
-  savePatients(patients);
-
-  setActivePatientId(patient.id);
-
-  loadPatientCard(patient);
-
-  alert("Пациент сәтті тіркелді!");
-}
-
-// Пациент картасын ашу
-function openPatient(id) {
-  const patient = getPatients().find(p => p.id === id);
-
-  if (!patient) {
-    alert("Пациент табылмады!");
-    return;
-  }
-
-  setActivePatientId(id);
-  loadPatientCard(patient);
-}
-
-// Пациенттің картасын жүктеу
-function loadPatientCard(patient) {
-  const data = JSON.parse(localStorage.getItem("platformData") || "{}");
-
-  data.speechCard = patient.speechCard || {
-    fullName: patient.fullName,
-    age: patient.age
-  };
-
-  localStorage.setItem("platformData", JSON.stringify(data));
-
-  renderPatients();
-
-  const area = document.getElementById("patientSpeechCard");
-
-  area.innerHTML = `
-    <div class="active-patient">
-      <h3>👤 ${escapeCard(patient.fullName)}</h3>
-      <p>Жасы: ${escapeCard(patient.age || "Көрсетілмеген")}</p>
-      <p>Қазіргі уақытта осы пациенттің картасы ашық.</p>
-    </div>
-    <div id="activeSpeechCard"></div>
-  `;
-
-  // Сөйлеу картасын көрсету
-  const oldContainer = document.getElementById("speechCardContainer");
-
-  // Карта формасын уақытша жеке контейнерге көрсету
-  const originalContainer = document.getElementById("speechCardContainer");
-  const temporaryContainer = document.createElement("div");
-  temporaryContainer.id = "speechCardContainer";
-
-  area.appendChild(temporaryContainer);
-
-  renderSpeechCard();
-
-  const renderedContent = temporaryContainer.innerHTML;
-
-  temporaryContainer.remove();
-
-  document.getElementById("activeSpeechCard").innerHTML = renderedContent;
-}
-
-// Іздеу
-function filterPatients() {
-  const query = document.getElementById("patientSearch")
-    .value.toLowerCase();
-
-  document.querySelectorAll(".patient-card").forEach(card => {
-    card.style.display =
-      card.textContent.toLowerCase().includes(query) ? "" : "none";
-  });
-}
-
-// Пациентті жою
-function deletePatient(id) {
-  if (!confirm("Осы пациенттің картасын жоясыз ба?")) return;
-
-  const patients = getPatients().filter(p => p.id !== id);
-
-  savePatients(patients);
-
-  if (getActivePatientId() === id) {
-    localStorage.removeItem("activePatientId");
-  }
-
-  renderPatients();
-}
-
-// Сөйлеу картасын пациент профиліне сақтау
-const originalSaveSpeechCardForm = window.saveSpeechCardForm;
-
-window.saveSpeechCardForm = function() {
-  if (typeof originalSaveSpeechCardForm === "function") {
-    originalSaveSpeechCardForm();
-  }
-
-  const activeId = getActivePatientId();
-  if (!activeId) return;
-
-  const patients = getPatients();
-  const patient = patients.find(p => p.id === activeId);
-
-  if (!patient) return;
-
-  const data = JSON.parse(localStorage.getItem("platformData") || "{}");
-
-  patient.speechCard = data.speechCard || {};
-  patient.fullName = patient.speechCard.fullName || patient.fullName;
-  patient.age = patient.speechCard.age || patient.age;
-
-  savePatients(patients);
-};
-
-// Кабинетті ашу
-const previousPatientsOpenCabinet = window.openCabinet;
-
-window.openCabinet = function() {
-  if (typeof previousPatientsOpenCabinet === "function") {
-    previousPatientsOpenCabinet();
-  }
-
-  renderPatients();
-};
 
 // ==========================================
-// ДИЗАЙН
+// КАБИНЕТКЕ PDF БАТЫРМАСЫН ҚОСУ
 // ==========================================
 
-const patientsStyle = document.createElement("style");
+function addReportButton() {
+  const container = document.getElementById("speechCardContainer");
 
-patientsStyle.textContent = `
-.patients-header {
-  text-align: center;
-  padding: 25px;
-  background: linear-gradient(135deg,#6954c9,#9d87ed);
-  color: white;
-  border-radius: 20px;
-  margin-bottom: 20px;
+  if (!container || document.getElementById("reportButton")) return;
+
+  const button = document.createElement("button");
+
+  button.id = "reportButton";
+  button.textContent = "📄 PDF есеп қалыптастыру";
+  button.className = "sc-report-button";
+  button.onclick = generatePatientReport;
+
+  container.appendChild(button);
 }
 
-.patients-actions button,
-.patient-buttons button {
+const reportStyle = document.createElement("style");
+
+reportStyle.textContent = `
+.sc-report-button {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin: 20px 0;
   border: none;
-  padding: 12px 18px;
-  background: #7058d5;
+  border-radius: 13px;
+  background: #6954c9;
   color: white;
-  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.patients-search input,
-.patient-form input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 14px;
-  border: 1px solid #ddd5f5;
-  border-radius: 12px;
-  margin: 12px 0;
-}
-
-.patient-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 18px;
-  background: white;
-  border-radius: 16px;
-  margin: 12px 0;
-  box-shadow: 0 5px 18px rgba(60,40,120,.08);
-}
-
-.patient-card h3 {
-  color: #6954c9;
-}
-
-.patient-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.patient-delete {
-  background: #e85d75 !important;
-}
-
-.patient-cancel {
-  background: #999 !important;
-}
-
-.patient-form,
-.active-patient {
-  background: #f7f5ff;
-  border-radius: 18px;
-  padding: 20px;
-  margin: 20px 0;
-}
-
-.patient-form label {
-  display: block;
-  margin: 12px 0;
-}
-
-.patients-empty {
-  text-align: center;
-  padding: 35px;
-  background: white;
-  border-radius: 18px;
-}
-
-.patients-empty span {
-  font-size: 45px;
-}
-
-@media(max-width:600px) {
-  .patient-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .patient-buttons {
-    width: 100%;
-  }
+.sc-report-button:hover {
+  background: #5140a5;
 }
 `;
 
-document.head.appendChild(patientsStyle);
+document.head.appendChild(reportStyle);
+
+const previousReportCabinet = window.openCabinet;
+
+window.openCabinet = function() {
+  if (typeof previousReportCabinet === "function") {
+    previousReportCabinet();
+  }
+
+  setTimeout(addReportButton, 100);
+};
