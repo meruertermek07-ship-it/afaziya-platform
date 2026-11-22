@@ -10,7 +10,7 @@ const articulationExercises = [
         instruction: "Ерінді алға қарай созып, түтікше пішінін жасаңыз. 3–5 секунд ұстап, бастапқы қалыпқа оралыңыз. Жаттығуды бірнеше рет қайталаңыз.",
         materials: "Айна, бейненұсқаулық.",
         warning: "Тістерді қатты қыспаңыз. Ерінді шамадан тыс күшпен созбаңыз.",
-        videoUrl: ""
+        videoUrl: "https://drive.google.com/file/d/1WICEx_JFQEboHCsPHloPgdWQL4IxZhUH/view?usp=drivesdk"
     },
     {
         id: "art_teeth",
@@ -19,7 +19,7 @@ const articulationExercises = [
         instruction: "Ауызды сәл ашыңыз. Тіл ұшымен жоғарғы тістердің ішкі жағын оңнан солға қарай жүргізіңіз. Содан кейін төменгі тістердің ішкі жағын қайталаңыз.",
         materials: "Айна, бейненұсқаулық.",
         warning: "Жақты қатты қозғалтпаңыз. Тілді тістерге қатты баспаңыз.",
-        videoUrl: ""
+        videoUrl: "https://drive.google.com/file/d/1ujsmGx2GWZOyXC7wnfuLZkEEFJNiS8rE/view?usp=drivesdk"
     },
     {
         id: "art_clock",
@@ -28,7 +28,7 @@ const articulationExercises = [
         instruction: "Ауызды ашып, тілді оң жақ ауыз бұрышына, кейін сол жақ ауыз бұрышына қарай қозғалтыңыз. Қозғалысты сағат тілі сияқты бірқалыпты орындаңыз.",
         materials: "Айна, бейненұсқаулық.",
         warning: "Басты бұрмаңыз. Жақты қозғалтпай, жаттығуды тіл арқылы орындауға тырысыңыз.",
-        videoUrl: ""
+        videoUrl: "https://drive.google.com/file/d/16res7Ehccs8hGgJN5FjZ3SYGM0t64SNQ/view?usp=drivesdk"
     },
     {
         id: "art_jam",
@@ -37,7 +37,7 @@ const articulationExercises = [
         instruction: "Ауызды ашыңыз. Тілдің жалпақ ұшымен жоғарғы ерінді төменнен жоғары қарай сипаңыз. Қозғалысты асықпай қайталаңыз.",
         materials: "Айна, бейненұсқаулық.",
         warning: "Тілді тістемеңіз және ерінді қатты қыспаңыз.",
-        videoUrl: ""
+        videoUrl: "https://drive.google.com/file/d/1aN3nwZtHPqAKX4uh6fTNxlz7e670nfis/view?usp=drivesdk"
     },
     {
         id: "art_swing",
@@ -46,7 +46,7 @@ const articulationExercises = [
         instruction: "Ауызды ашыңыз. Тіл ұшын алдымен жоғарғы ерінге, содан кейін төменгі ерінге қарай қозғалтыңыз. Қозғалысты кезектестіріңіз.",
         materials: "Айна, бейненұсқаулық.",
         warning: "Жақты бір қалыпта ұстаңыз. Қозғалысты асықпай орындаңыз.",
-        videoUrl: ""
+        videoUrl: "https://drive.google.com/file/d/1U91KbU6ZpLIcBmXn_asQ4PFJpEyG222b/view?usp=drivesdk"
     },
     {
         id: "art_football",
@@ -55,7 +55,7 @@ const articulationExercises = [
         instruction: "Тілді ауыздың ішіне шығарып, оң және сол жақ ұртқа кезекпен тигізіңіз. Допты бір қақпадан екінші қақпаға бағыттағандай орындаңыз.",
         materials: "Айна, бейненұсқаулық.",
         warning: "Басты қозғалтпаңыз. Қозғалысты ауырсынусыз, өзіңізге ыңғайлы деңгейде орындаңыз.",
-        videoUrl: ""
+        videoUrl: "https://drive.google.com/file/d/1H5Puv99CUlYb-5e8NSjoS38KVYJocV2N/view?usp=drivesdk"
     }
 ];
 
