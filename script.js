@@ -1,16 +1,28 @@
 // ==================================================
-// АФАЗИЯ – ЦИФРЛЫҚ ТҮЗЕТУ-ДАМЫТУ ПЛАТФОРМАСЫ
+// «ТІЛАШАР»
+// АФАЗИЯҒА АРНАЛҒАН ЦИФРЛЫҚ ТҮЗЕТУ-ДАМЫТУ ПЛАТФОРМАСЫ
+// ==================================================
+
+
+// ==================================================
+// 1. НЕГІЗГІ АЙНЫМАЛЫЛАР
 // ==================================================
 
 const STORAGE_KEY = "afaziyaPlatformData";
 
 let currentSection = "";
 let currentTask = null;
+
 let microphoneStream = null;
 let cameraStream = null;
 let recognition = null;
 
-let platformData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+
+// ==================================================
+// 2. ДЕРЕКТЕРДІ ЖҮКТЕУ
+// ==================================================
+
+const defaultPlatformData = {
     bonus: 0,
     completed: [],
     attempts: {},
@@ -21,11 +33,28 @@ let platformData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
     speechCard: {}
 };
 
+function loadPlatformData() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+        return {
+            ...defaultPlatformData,
+            ...(saved || {})
+        };
+    } catch (error) {
+        return { ...defaultPlatformData };
+    }
+}
+
+let platformData = loadPlatformData();
+
+
 // ==================================================
-// БӨЛІМДЕР МЕН ТАПСЫРМАЛАР
+// 3. БӨЛІМДЕР МЕН ТАПСЫРМАЛАР
 // ==================================================
 
 const sections = {
+
     breathing: {
         title: "Тыныс алу жаттығулары",
         icon: "🌬️",
@@ -34,8 +63,8 @@ const sections = {
                 id: "b1",
                 title: "Қауырсынды ұшыру",
                 goal: "Ұзақ әрі бірқалыпты дем шығаруды жаттықтыру.",
-                instruction: "Мұрынмен тыныс алып, ауызбен баяу үрлеңіз. Экрандағы қауырсынды мәреге жеткізіңіз.",
-                materials: "Қауырсын суреті, микрофон.",
+                instruction: "Мұрынмен тыныс алып, ауызбен баяу үрлеңіз.",
+                materials: "Қауырсын бейнесі, микрофон.",
                 warning: "Басты айналдыратындай қатты немесе ұзақ үрлемеңіз.",
                 bonus: 10,
                 type: "breath"
@@ -45,7 +74,7 @@ const sections = {
                 title: "Мақтаны үрлеу",
                 goal: "Дем шығаруды бірқалыпты басқару.",
                 instruction: "Мақтаны бастапқы нүктеден мәреге дейін баяу үрлеңіз.",
-                materials: "Мақта бейнесі, бастапқы нүкте және мәреге арналған сызық.",
+                materials: "Мақта бейнесі.",
                 warning: "Өзіңізге ыңғайлы тыныс ырғағын сақтаңыз.",
                 bonus: 10,
                 type: "breath"
@@ -54,8 +83,8 @@ const sections = {
                 id: "b3",
                 title: "Желкенді қайық",
                 goal: "Тыныс пен дем шығаруды үйлестіру.",
-                instruction: "Микрофонға үрлеп, экрандағы қайықты қозғалысқа келтіріңіз.",
-                materials: "Қайық анимациясы, микрофон.",
+                instruction: "Баяу үрлеп, қайықты қозғалысқа келтіріңіз.",
+                materials: "Қайық анимациясы.",
                 warning: "Қатты күш салудың қажеті жоқ.",
                 bonus: 10,
                 type: "breath"
@@ -64,8 +93,8 @@ const sections = {
                 id: "b4",
                 title: "Сабын көпіршіктері",
                 goal: "Бірқалыпты дем шығаруды жаттықтыру.",
-                instruction: "Баяу үрлеп, экранда көпіршіктердің пайда болуын бақылаңыз.",
-                materials: "Көпіршік суреттері, микрофон.",
+                instruction: "Баяу дем шығарып, көпіршіктерді бақылаңыз.",
+                materials: "Көпіршік бейнесі.",
                 warning: "Тыныс алуды табиғи қалыпта орындаңыз.",
                 bonus: 10,
                 type: "breath"
@@ -73,9 +102,9 @@ const sections = {
             {
                 id: "b5",
                 title: "Шамды сөндір",
-                goal: "Дем шығарудың ұзақтығы мен бағытын бақылау.",
-                instruction: "Экрандағы жанбайтын шам макетіне қарай баяу үрлеңіз.",
-                materials: "Қағаз шам макеті, микрофон.",
+                goal: "Дем шығаруды бақылау.",
+                instruction: "Экрандағы шам бейнесіне қарай баяу үрлеңіз.",
+                materials: "Шам бейнесі.",
                 warning: "Нақты от қолданылмайды.",
                 bonus: 10,
                 type: "breath"
@@ -101,7 +130,7 @@ const sections = {
                 id: "a2",
                 title: "Тіс тазалау",
                 goal: "Тілдің қимылын дамыту.",
-                instruction: "Тіл ұшымен жоғарғы және төменгі тістердің ішкі жағын кезекпен айналдыра жүргізіңіз.",
+                instruction: "Тіл ұшымен тістердің ішкі жағын айналдыра жүргізіңіз.",
                 materials: "Айна, камера.",
                 warning: "Тілді қатты баспаңыз.",
                 bonus: 10,
@@ -111,7 +140,7 @@ const sections = {
                 id: "a3",
                 title: "Сағат",
                 goal: "Тіл ұшының оңға және солға қозғалуын дамыту.",
-                instruction: "Ауызды ашып, тіл ұшын оң және сол жаққа кезекпен қозғалтыңыз.",
+                instruction: "Тіл ұшын оң және сол жаққа кезекпен қозғалтыңыз.",
                 materials: "Айна, камера.",
                 warning: "Жаттығуды асықпай орындаңыз.",
                 bonus: 10,
@@ -121,7 +150,7 @@ const sections = {
                 id: "a4",
                 title: "Тәтті тосап",
                 goal: "Тілдің жоғары бағыттағы қимылын жаттықтыру.",
-                instruction: "Тілдің жалпақ ұшымен жоғарғы ерінді жоғарыдан төмен қарай жалағандай қимыл жасаңыз.",
+                instruction: "Тілдің жалпақ ұшымен жоғарғы ерінді жалағандай қимыл жасаңыз.",
                 materials: "Айна, камера.",
                 warning: "Басты шалқайтпаңыз.",
                 bonus: 10,
@@ -131,7 +160,7 @@ const sections = {
                 id: "a5",
                 title: "Әткеншек",
                 goal: "Тілдің жоғары және төмен қозғалысын дамыту.",
-                instruction: "Тіл ұшын кезекпен жоғарғы және төменгі ерінге бағыттаңыз.",
+                instruction: "Тіл ұшын жоғарғы және төменгі ерінге кезекпен бағыттаңыз.",
                 materials: "Айна, камера.",
                 warning: "Қимылды баяу орындаңыз.",
                 bonus: 10,
@@ -140,10 +169,10 @@ const sections = {
             {
                 id: "a6",
                 title: "Футбол",
-                goal: "Тілдің оң және сол жаққа бағытталған қозғалысын дамыту.",
+                goal: "Тілдің оң және сол жаққа қозғалуын дамыту.",
                 instruction: "Тілді оң және сол жақ ұртқа кезекпен тіреңіз.",
                 materials: "Айна, камера.",
-                warning: "Қимыл кезінде жақты қатты қыспаңыз.",
+                warning: "Жақты қатты қыспаңыз.",
                 bonus: 10,
                 type: "camera"
             }
@@ -157,10 +186,10 @@ const sections = {
             {
                 id: "v1",
                 title: "Сөздер әлемі",
-                goal: "Зат атауларын түсіну және сөзді суретпен сәйкестендіру.",
+                goal: "Зат атауларын түсіну.",
                 instruction: "Берілген сөзге сәйкес суретті таңдаңыз.",
-                materials: "Заттар суреттері, сөз карточкалары.",
-                warning: "Қате жауап берілсе, тапсырманы қайта орындауға болады.",
+                materials: "Заттар суреттері.",
+                warning: "Қажет болса, тапсырманы қайталаңыз.",
                 bonus: 15,
                 type: "matching"
             },
@@ -168,17 +197,17 @@ const sections = {
                 id: "v2",
                 title: "Жоғалған сөзді тап",
                 goal: "Сөйлем мағынасына сәйкес сөзді таңдау.",
-                instruction: "Сөйлемдегі бос орынды мағынасына сай сөзбен толықтырыңыз.",
-                materials: "Сөйлем карточкалары, сөздер.",
-                warning: "Сөйлемді толық тыңдап немесе оқып шығыңыз.",
+                instruction: "Бос орынды мағынасына сай сөзбен толықтырыңыз.",
+                materials: "Сөйлем карточкалары.",
+                warning: "Сөйлемді толық оқып шығыңыз.",
                 bonus: 15,
                 type: "choice"
             },
             {
                 id: "v3",
                 title: "Сөзді оят!",
-                goal: "Зат атауларын өздігінен еске түсіру.",
-                instruction: "Суреттегі заттың атауын микрофонға айтыңыз немесе мәтін өрісіне жазыңыз.",
+                goal: "Зат атауларын еске түсіру.",
+                instruction: "Суреттегі заттың атауын айтыңыз немесе жазыңыз.",
                 materials: "Заттар суреттері, микрофон.",
                 warning: "Сөйлеуді тану нәтижесін логопед тексеруі қажет.",
                 bonus: 15,
@@ -189,17 +218,17 @@ const sections = {
                 title: "Сөздер себеті",
                 goal: "Сөздерді мағыналық топтарға бөлу.",
                 instruction: "Суреттерді тиісті топқа орналастырыңыз.",
-                materials: "Жемістер, киімдер, жануарлар, ыдыстар суреттері.",
-                warning: "Әр суреттің мағынасын мұқият қараңыз.",
+                materials: "Жемістер, киімдер, жануарлар суреттері.",
+                warning: "Суреттердің мағынасына назар аударыңыз.",
                 bonus: 15,
                 type: "choice"
             },
             {
                 id: "v5",
                 title: "Сөздің досын тап",
-                goal: "Заттар арасындағы мағыналық байланысты анықтау.",
-                instruction: "Мағынасы бір-бірімен байланысты суреттерді жұптастырыңыз.",
-                materials: "Заттар мен олардың жұптарының суреттері.",
+                goal: "Мағыналық байланысты анықтау.",
+                instruction: "Бір-бірімен байланысты заттарды жұптастырыңыз.",
+                materials: "Заттар суреттері.",
                 warning: "Заттардың қолданылу мақсатын ескеріңіз.",
                 bonus: 15,
                 type: "matching"
@@ -207,9 +236,9 @@ const sections = {
             {
                 id: "v6",
                 title: "Менің бір күнім",
-                goal: "Күнделікті әрекеттердің ретін түсіну және атау.",
-                instruction: "Суреттерді дұрыс ретпен орналастырып, әрекеттерді атаңыз.",
-                materials: "Күнделікті әрекеттер бейнеленген суреттер.",
+                goal: "Күнделікті әрекеттердің ретін түсіну.",
+                instruction: "Суреттерді дұрыс ретпен орналастырыңыз.",
+                materials: "Күнделікті әрекеттер суреттері.",
                 warning: "Оқиғалардың табиғи ретін сақтаңыз.",
                 bonus: 15,
                 type: "ordering"
@@ -217,7 +246,7 @@ const sections = {
         ]
     },
 
-    understanding: {
+    comprehension: {
         title: "Сөйлеуді түсіну",
         icon: "👂",
         tasks: [
@@ -225,18 +254,18 @@ const sections = {
                 id: "u1",
                 title: "Тыңда да, тап!",
                 goal: "Ауызша айтылған сөзді түсіну.",
-                instruction: "Аудионы тыңдап, сәйкес суретті таңдаңыз.",
-                materials: "Аудиожазбалар, заттар суреттері.",
-                warning: "Қажет болса, аудионы қайта тыңдаңыз.",
+                instruction: "Сөзді тыңдап, сәйкес суретті таңдаңыз.",
+                materials: "Аудио, суреттер.",
+                warning: "Аудионы қайта тыңдауға болады.",
                 bonus: 15,
                 type: "listening"
             },
             {
                 id: "u2",
                 title: "Жасырын зат",
-                goal: "Заттың қызметі мен сипаттамасын түсіну.",
-                instruction: "Сипаттаманы тыңдап, қандай зат туралы айтылғанын анықтаңыз.",
-                materials: "Заттар суреттері, сипаттамалар.",
+                goal: "Заттың қызметін түсіну.",
+                instruction: "Сипаттама бойынша затты анықтаңыз.",
+                materials: "Заттар суреттері.",
                 warning: "Заттың қызметіне назар аударыңыз.",
                 bonus: 15,
                 type: "choice"
@@ -245,18 +274,18 @@ const sections = {
                 id: "u3",
                 title: "Дыбыстың иесін тап",
                 goal: "Қоршаған орта дыбыстарын ажырату.",
-                instruction: "Дыбысты тыңдап, оған сәйкес суретті таңдаңыз.",
-                materials: "Жануарлар, көлік, қоңырау және табиғат дыбыстары.",
-                warning: "Бұл жаттығу сөзді түсіну тапсырмасын алмастырмайды.",
+                instruction: "Дыбысты тыңдап, сәйкес суретті таңдаңыз.",
+                materials: "Дыбыстар мен суреттер.",
+                warning: "Қажет болса, дыбысты қайталаңыз.",
                 bonus: 15,
                 type: "listening"
             },
             {
                 id: "u4",
                 title: "Қайсысы қайда жатады?",
-                goal: "Заттарды мағыналық топтарға біріктіру.",
-                instruction: "Аудиода айтылған топқа жататын суреттерді таңдаңыз.",
-                materials: "Жемістер, киімдер, ыдыстар, жануарлар суреттері.",
+                goal: "Заттарды топтастыру.",
+                instruction: "Берілген топқа сәйкес суреттерді таңдаңыз.",
+                materials: "Тақырыптық суреттер.",
                 warning: "Бірнеше дұрыс жауап болуы мүмкін.",
                 bonus: 15,
                 type: "choice"
@@ -266,8 +295,8 @@ const sections = {
                 title: "Әрекетті таны!",
                 goal: "Етістіктердің мағынасын түсіну.",
                 instruction: "Әрекетті тыңдап, сәйкес суретті таңдаңыз.",
-                materials: "Қимыл-әрекет суреттері.",
-                warning: "Ұқсас әрекеттерді мұқият ажыратыңыз.",
+                materials: "Қимыл суреттері.",
+                warning: "Әрекетті мұқият бақылаңыз.",
                 bonus: 15,
                 type: "choice"
             },
@@ -276,28 +305,28 @@ const sections = {
                 title: "Қай жерде орналасқан?",
                 goal: "Кеңістіктік ұғымдарды түсіну.",
                 instruction: "Затты нұсқауға сәйкес орналастырыңыз.",
-                materials: "Бөлме суреті, заттар бейнелері.",
-                warning: "Үстінде, астында, ішінде, жанында сөздеріне назар аударыңыз.",
+                materials: "Бөлме суреті.",
+                warning: "Үстінде, астында, ішінде сөздеріне назар аударыңыз.",
                 bonus: 15,
                 type: "choice"
             },
             {
                 id: "u7",
                 title: "Сөйлемнің суретін тап!",
-                goal: "Сөйлемнің жалпы мағынасын түсіну.",
-                instruction: "Сөйлемді тыңдап, оған сәйкес суретті таңдаңыз.",
-                materials: "Сюжеттік суреттер, аудиожазбалар.",
-                warning: "Кім? Не істеді? Кімге? сұрақтарын ескеріңіз.",
+                goal: "Сөйлем мағынасын түсіну.",
+                instruction: "Сөйлемге сәйкес суретті таңдаңыз.",
+                materials: "Сюжеттік суреттер.",
+                warning: "Сөйлемнің негізгі мазмұнын анықтаңыз.",
                 bonus: 15,
                 type: "listening"
             },
             {
                 id: "u8",
                 title: "Дұрыс орында!",
-                goal: "Бірізді және көпсатылы нұсқауларды түсіну.",
-                instruction: "Аудиода берілген әрекеттерді ретімен орындаңыз.",
-                materials: "Заттар суреттері, аудионұсқаулар.",
-                warning: "Қажет болған жағдайда нұсқауды бөліктерге бөліп тыңдаңыз.",
+                goal: "Нұсқауларды түсіну.",
+                instruction: "Берілген әрекеттерді ретімен орындаңыз.",
+                materials: "Заттар мен суреттер.",
+                warning: "Нұсқауды бөліктерге бөліп тыңдауға болады.",
                 bonus: 15,
                 type: "choice"
             }
@@ -311,9 +340,9 @@ const sections = {
             {
                 id: "s1",
                 title: "Дыбысты оят!",
-                goal: "Дауысты дыбыстарды айту және қайталау.",
-                instruction: "А, О, Ұ, І дыбыстарын тыңдап, қайталаңыз.",
-                materials: "Аудиожазба, микрофон.",
+                goal: "Дауысты дыбыстарды айту.",
+                instruction: "А, О, Ұ, І дыбыстарын қайталаңыз.",
+                materials: "Аудио, микрофон.",
                 warning: "Дыбыстың дұрыстығын логопед бағалайды.",
                 bonus: 15,
                 type: "speech"
@@ -321,8 +350,8 @@ const sections = {
             {
                 id: "s2",
                 title: "Буын пойызы",
-                goal: "Буындарды біріктіріп, сөз құрастыру.",
-                instruction: "Буындарды ретімен орналастырып, сөзді құрастырыңыз.",
+                goal: "Буындардан сөз құрастыру.",
+                instruction: "Буындарды ретімен орналастырыңыз.",
                 materials: "Буын карточкалары.",
                 warning: "Алдымен жеңіл буындардан бастаңыз.",
                 bonus: 15,
@@ -331,10 +360,10 @@ const sections = {
             {
                 id: "s3",
                 title: "Суретті сөйлет!",
-                goal: "Сурет бойынша заттарды өздігінен атау.",
-                instruction: "Суретке қарап, заттың атауын айтыңыз немесе жазыңыз.",
-                materials: "Заттар суреттері, микрофон.",
-                warning: "Қажет болса, алғашқы дыбыс арқылы көмек алыңыз.",
+                goal: "Сурет бойынша заттарды атау.",
+                instruction: "Суретке қарап, заттың атауын айтыңыз.",
+                materials: "Заттар суреттері.",
+                warning: "Қажет болса, жазбаша жауап беріңіз.",
                 bonus: 15,
                 type: "speech"
             },
@@ -342,19 +371,19 @@ const sections = {
                 id: "s4",
                 title: "Сөзді толықтыр!",
                 goal: "Сөздің жетіспейтін бөлігін анықтау.",
-                instruction: "Берілген сөздегі бос орынды тиісті әріптермен толықтырыңыз.",
-                materials: "Сөз карточкалары, әріптер.",
-                warning: "Сөздің мағынасын да ескеріңіз.",
+                instruction: "Сөздегі бос орынды толықтырыңыз.",
+                materials: "Сөз карточкалары.",
+                warning: "Сөз мағынасын ескеріңіз.",
                 bonus: 15,
                 type: "writing"
             },
             {
                 id: "s5",
                 title: "Сөз құрастыру шеберханасы",
-                goal: "Сөз тіркесі мен қарапайым сөйлем құрастыру.",
-                instruction: "Берілген сөздерден мағыналы сөйлем құраңыз.",
-                materials: "Сөз карточкалары, суреттер.",
-                warning: "Сөздердің орын тәртібіне назар аударыңыз.",
+                goal: "Сөйлем құрастыру.",
+                instruction: "Берілген сөздерден сөйлем құраңыз.",
+                materials: "Сөз карточкалары.",
+                warning: "Сөздердің орын тәртібін сақтаңыз.",
                 bonus: 15,
                 type: "writing"
             },
@@ -362,7 +391,7 @@ const sections = {
                 id: "s6",
                 title: "Әңгіме құрастыр!",
                 goal: "Байланыстырып сөйлеуді дамыту.",
-                instruction: "Суреттерді ретімен орналастырып, оқиғаны баяндаңыз.",
+                instruction: "Суреттер бойынша оқиғаны баяндаңыз.",
                 materials: "Сюжеттік суреттер.",
                 warning: "Оқиғаның басы, ортасы және соңын сақтаңыз.",
                 bonus: 15,
@@ -371,19 +400,19 @@ const sections = {
             {
                 id: "s7",
                 title: "Диалог алаңы",
-                goal: "Күнделікті қарым-қатынас дағдыларын дамыту.",
-                instruction: "Берілген жағдаят бойынша сұрақтарға жауап беріңіз.",
-                materials: "Диалог карточкалары, виртуалды кейіпкер.",
-                warning: "Қажет болса, дайын жауап үлгілерін пайдаланыңыз.",
+                goal: "Қарым-қатынас дағдыларын дамыту.",
+                instruction: "Берілген жағдаят бойынша жауап беріңіз.",
+                materials: "Диалог карточкалары.",
+                warning: "Дайын жауап үлгілерін пайдалануға болады.",
                 bonus: 15,
                 type: "speech"
             },
             {
                 id: "s8",
                 title: "Микрофон менің қолымда!",
-                goal: "Өз ойын сөз және сөйлем арқылы жеткізу.",
-                instruction: "Берілген тақырып бойынша сөйлеңіз немесе жауабыңызды жазыңыз.",
-                materials: "Микрофон, тақырыптық суреттер.",
+                goal: "Өз ойын жеткізу.",
+                instruction: "Берілген тақырып бойынша сөйлеңіз немесе жазыңыз.",
+                materials: "Микрофон, суреттер.",
                 warning: "Сөйлеуді автоматты тану нәтижесі қате болуы мүмкін.",
                 bonus: 15,
                 type: "speech"
@@ -397,11 +426,11 @@ const sections = {
         tasks: [
             {
                 id: "r1",
-                title: "Әріпті таны және таңда",
+                title: "Әріпті таны",
                 goal: "Әріптерді тану және ажырату.",
-                instruction: "Берілген үлгіге сәйкес әріпті таңдаңыз.",
+                instruction: "Үлгіге сәйкес әріпті таңдаңыз.",
                 materials: "Әріп карточкалары.",
-                warning: "Ұқсас әріптерді ажыратуға көңіл бөліңіз.",
+                warning: "Ұқсас әріптерді ажыратыңыз.",
                 bonus: 15,
                 type: "choice"
             },
@@ -417,9 +446,9 @@ const sections = {
             },
             {
                 id: "r3",
-                title: "Сөзді оқып, суретін тап",
+                title: "Сөз-сурет",
                 goal: "Оқылған сөзді түсіну.",
-                instruction: "Сөзді оқып, оған сәйкес суретті таңдаңыз.",
+                instruction: "Сөзді оқып, сәйкес суретті таңдаңыз.",
                 materials: "Сөздер мен суреттер.",
                 warning: "Сөздің мағынасын түсінуге назар аударыңыз.",
                 bonus: 15,
@@ -427,21 +456,21 @@ const sections = {
             },
             {
                 id: "r4",
-                title: "Сөйлемді оқып, түсін",
+                title: "Сөйлемді оқып түсін",
                 goal: "Сөйлем мазмұнын түсіну.",
-                instruction: "Сөйлемді оқып, оған сәйкес суретті таңдаңыз.",
-                materials: "Сөйлемдер, сюжеттік суреттер.",
-                warning: "Сөйлемдегі негізгі ақпаратты анықтаңыз.",
+                instruction: "Сөйлемді оқып, сұраққа жауап беріңіз.",
+                materials: "Сөйлем карточкалары.",
+                warning: "Негізгі ақпаратты анықтаңыз.",
                 bonus: 15,
                 type: "reading"
             },
             {
                 id: "r5",
-                title: "Мәтінді оқып, ақпаратты тап",
-                goal: "Қысқа мәтіннің мазмұнын түсіну.",
+                title: "Мәтінді оқып ақпарат тап",
+                goal: "Қысқа мәтінді түсіну.",
                 instruction: "Мәтінді оқып, сұрақтарға жауап беріңіз.",
-                materials: "Қысқа мәтіндер, сұрақ карточкалары.",
-                warning: "Мәтінді қажет болған жағдайда қайта оқыңыз.",
+                materials: "Мәтіндер.",
+                warning: "Мәтінді қайта оқуға болады.",
                 bonus: 15,
                 type: "reading"
             },
@@ -449,7 +478,7 @@ const sections = {
                 id: "r6",
                 title: "Әріпті толықтыр",
                 goal: "Сөздегі жетіспейтін әріпті анықтау.",
-                instruction: "Сөздегі бос орынды тиісті әріппен толықтырыңыз.",
+                instruction: "Бос орынды тиісті әріппен толықтырыңыз.",
                 materials: "Сөз карточкалары.",
                 warning: "Сөзді толық оқып тексеріңіз.",
                 bonus: 15,
@@ -457,41 +486,41 @@ const sections = {
             },
             {
                 id: "r7",
-                title: "Сөзді құрастыр және жаз",
+                title: "Сөз құрастыр және жаз",
                 goal: "Әріптерден сөз құрастыру.",
-                instruction: "Аралас берілген әріптерді ретімен орналастырыңыз.",
-                materials: "Әріп карточкалары, пернетақта.",
+                instruction: "Әріптерді ретімен орналастырыңыз.",
+                materials: "Әріп карточкалары.",
                 warning: "Әріптердің ретін тексеріңіз.",
                 bonus: 15,
                 type: "writing"
             },
             {
                 id: "r8",
-                title: "Есті де, жаз",
-                goal: "Есту арқылы қабылданған сөзді жазу.",
-                instruction: "Аудионы тыңдап, естіген сөзіңізді жазыңыз.",
-                materials: "Аудиожазбалар, мәтін өрісі.",
+                title: "Есті де жаз",
+                goal: "Есту арқылы сөзді жазу.",
+                instruction: "Сөзді тыңдап, естігеніңізді жазыңыз.",
+                materials: "Аудио, мәтін өрісі.",
                 warning: "Аудионы қайталап тыңдауға болады.",
                 bonus: 15,
                 type: "writing"
             },
             {
                 id: "r9",
-                title: "Сурет бойынша сөз жаз",
-                goal: "Суреттегі заттар мен әрекеттердің атауын жазу.",
+                title: "Сурет бойынша сөз",
+                goal: "Суреттегі заттың атауын жазу.",
                 instruction: "Суретке қарап, оның атауын жазыңыз.",
-                materials: "Заттар мен әрекеттер суреттері.",
+                materials: "Заттар суреттері.",
                 warning: "Жазған сөзіңізді қайта оқыңыз.",
                 bonus: 15,
                 type: "writing"
             },
             {
                 id: "r10",
-                title: "Сөйлемді толықтыр және жаз",
+                title: "Сөйлемді толықтыр",
                 goal: "Мағыналы сөйлем құрастыру.",
-                instruction: "Сөйлемдегі бос орынды толтырып, толық сөйлем жазыңыз.",
+                instruction: "Сөйлемдегі бос орынды толтырыңыз.",
                 materials: "Сөйлем карточкалары.",
-                warning: "Сөйлемнің мағыналық байланысын сақтаңыз.",
+                warning: "Сөйлем мағынасын сақтаңыз.",
                 bonus: 15,
                 type: "writing"
             },
@@ -499,19 +528,19 @@ const sections = {
                 id: "r11",
                 title: "Күнделікті өмірде жазу",
                 goal: "Тұрмыстық жазу дағдыларын дамыту.",
-                instruction: "Қысқа хабарлама немесе сатып алу тізімін жазыңыз.",
-                materials: "Жазу үлгілері, мәтін өрісі.",
-                warning: "Жазу мазмұны адамның күнделікті қажеттілігіне сай болуы керек.",
+                instruction: "Қысқа хабарлама немесе тізім жазыңыз.",
+                materials: "Жазу үлгілері.",
+                warning: "Өзіңізге таныс тақырыпты таңдаңыз.",
                 bonus: 15,
                 type: "writing"
             },
             {
                 id: "r12",
-                title: "Мәтін құрастыр және жаз",
-                goal: "Бірнеше сөйлемнен тұратын мәтін құрастыру.",
-                instruction: "Суреттер мен тірек сөздерді пайдаланып, шағын мәтін жазыңыз.",
-                materials: "Сюжеттік суреттер, тірек сөздер.",
-                warning: "Ойдың жүйелілігіне назар аударыңыз.",
+                title: "Мәтін құрастыр",
+                goal: "Бірнеше сөйлемнен тұратын мәтін жазу.",
+                instruction: "Тірек сөздерді пайдаланып, шағын мәтін жазыңыз.",
+                materials: "Суреттер, тірек сөздер.",
+                warning: "Ойдың жүйелілігін сақтаңыз.",
                 bonus: 15,
                 type: "writing"
             }
@@ -527,7 +556,7 @@ const sections = {
                 title: "Нүктелерді қосу",
                 goal: "Көру-қимыл үйлесімділігін дамыту.",
                 instruction: "Нүктелерді берілген ретпен қосыңыз.",
-                materials: "Нүктелер картасы, қарындаш.",
+                materials: "Нүктелер картасы.",
                 warning: "Қимылды асықпай орындаңыз.",
                 bonus: 10,
                 type: "drawing"
@@ -536,16 +565,16 @@ const sections = {
                 id: "l2",
                 title: "Екі қолмен жаттығу",
                 goal: "Қимылдарды үйлестіру.",
-                instruction: "Карточкадағы екі қол жаттығуын кезекпен орындаңыз.",
+                instruction: "Қимылдарды кезекпен орындаңыз.",
                 materials: "Қимыл карточкалары.",
-                warning: "Қимылды өз мүмкіндігіңізге қарай орындаңыз.",
+                warning: "Өз мүмкіндігіңізге қарай орындаңыз.",
                 bonus: 10,
                 type: "movement"
             },
             {
                 id: "l3",
                 title: "Лабиринт",
-                goal: "Көру арқылы бағдарлау және зейінді дамыту.",
+                goal: "Көру арқылы бағдарлау.",
                 instruction: "Бастапқы нүктеден мәреге дейін жол табыңыз.",
                 materials: "Лабиринт суреті.",
                 warning: "Жолды мұқият бақылаңыз.",
@@ -555,10 +584,10 @@ const sections = {
             {
                 id: "l4",
                 title: "Түстер әлемі",
-                goal: "Түстерді ажырату және нұсқауды орындау.",
+                goal: "Түстерді ажырату.",
                 instruction: "Айтылған түске сәйкес карточканы таңдаңыз.",
-                materials: "Түрлі түсті карточкалар.",
-                warning: "Түстерді атаумен қатар, көрсетуді де қолдануға болады.",
+                materials: "Түсті карточкалар.",
+                warning: "Түсті көрсетумен де жауап беруге болады.",
                 bonus: 10,
                 type: "choice"
             }
@@ -568,12 +597,18 @@ const sections = {
 
 
 // ==================================================
-// ДЕРЕКТЕРДІ САҚТАУ
+// 4. ҚОСЫМША ФАЙЛДАРМЕН БАЙЛАНЫС
 // ==================================================
 
-function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(platformData));
-}
+window.sections = sections;
+window.platformData = platformData;
+
+window.getTaskById = getTaskById;
+
+
+// ==================================================
+// 5. ТАПСЫРМАЛАРДЫ БАСҚАРУ
+// ==================================================
 
 function getAllTasks() {
     return Object.values(sections).flatMap(section => section.tasks);
@@ -591,9 +626,14 @@ function getTotalCount() {
     return getAllTasks().length;
 }
 
+function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(platformData));
+    window.platformData = platformData;
+}
+
 
 // ==================================================
-// БЕТТЕР АРАСЫНДА АУЫСУ
+// 6. БЕТТЕР АРАСЫНДА АУЫСУ
 // ==================================================
 
 function showPage(pageId) {
@@ -626,18 +666,24 @@ function backToTasks() {
 
 function openCabinet() {
     showPage("cabinetPage");
-    renderSpeechCard();
+
+    if (typeof renderSpeechCard === "function") {
+        renderSpeechCard();
+    }
 }
 
 
 // ==================================================
-// БӨЛІМДІ АШУ
+// 7. БӨЛІМДІ АШУ
 // ==================================================
 
 function openSection(sectionId) {
     const section = sections[sectionId];
 
-    if (!section) return;
+    if (!section) {
+        console.warn("Бөлім табылмады:", sectionId);
+        return;
+    }
 
     currentSection = sectionId;
 
@@ -657,22 +703,20 @@ function openSection(sectionId) {
         const completed = platformData.completed.includes(task.id);
 
         const card = document.createElement("div");
+
         card.className = "task-card";
 
         card.innerHTML = `
-            <div style="font-size:30px;margin-bottom:12px">
-                ${section.icon}
-            </div>
+            <div style="font-size:30px">${section.icon}</div>
 
             <h3>${index + 1}. ${task.title}</h3>
 
             <p>${task.goal}</p>
 
-            <p>
-                ${completed ? "✅ Орындалды" : "🔒 Әлі орындалмаған"}
-            </p>
+            <p>${completed ? "✅ Орындалды" : "⏳ Орындалмаған"}</p>
 
-            <button class="primary-btn" onclick="openExercise('${task.id}')">
+            <button class="primary-btn"
+                onclick="openExercise('${task.id}')">
                 ${completed ? "Қайталау" : "Бастау"}
             </button>
         `;
@@ -685,13 +729,15 @@ function openSection(sectionId) {
 
 
 // ==================================================
-// ТАПСЫРМАНЫ АШУ
+// 8. ТАПСЫРМАНЫ АШУ
 // ==================================================
 
 function openExercise(taskId) {
     const task = getTaskById(taskId);
 
     if (!task) return;
+
+    stopMedia();
 
     currentTask = task;
 
@@ -703,16 +749,39 @@ function openExercise(taskId) {
 
     const content = document.getElementById("exerciseContent");
 
-    content.innerHTML = createExerciseContent(task);
+    if (!content) return;
 
-    document.getElementById("exerciseResult").innerHTML = "";
+    content.innerHTML = "";
+
+    // Арнайы модульдер
+    const moduleNames = {
+        breathing: "renderBreathingExercise",
+        articulation: "renderArticulationExercise",
+        vocabulary: "renderVocabularyExercise",
+        comprehension: "renderComprehensionExercise",
+        speech: "renderSpeechExercise",
+        literacy: "renderLiteracyExercise",
+        logorhythmics: "renderLogorhythmicsExercise"
+    };
+
+    const moduleFunction = moduleNames[currentSection];
+
+    if (moduleFunction && typeof window[moduleFunction] === "function") {
+        window[moduleFunction](task);
+    } else {
+        content.innerHTML = createExerciseContent(task);
+    }
+
+    const result = document.getElementById("exerciseResult");
+
+    if (result) result.innerHTML = "";
 
     showPage("exercisePage");
 }
 
 
 // ==================================================
-// ТАПСЫРМАҒА АРНАЛҒАН ИНТЕРАКТИВТІ АЙМАҚ
+// 9. НЕГІЗГІ ТАПСЫРМА ҮЛГІЛЕРІ
 // ==================================================
 
 function createExerciseContent(task) {
@@ -720,23 +789,10 @@ function createExerciseContent(task) {
     if (task.type === "breath") {
         return `
             <h2>🌬️ Тыныс алу жаттығуы</h2>
-
-            <div id="breathObject"
-                style="font-size:75px;margin:25px">
-                ${task.id === "b1" ? "🪶" :
-                  task.id === "b2" ? "☁️" :
-                  task.id === "b3" ? "⛵" :
-                  task.id === "b4" ? "🫧" : "🕯️"}
-            </div>
-
-            <p id="breathStatus">Микрофонды қосып, баяу үрлеңіз.</p>
-
+            <div id="breathObject" style="font-size:75px">🪶</div>
+            <p id="breathStatus">Баяу дем шығарыңыз.</p>
             <button class="primary-btn" onclick="activateMicrophone()">
                 🎤 Микрофонды қосу
-            </button>
-
-            <button class="secondary-btn" onclick="moveBreathObject()">
-                Үрлеу әрекетін белгілеу
             </button>
         `;
     }
@@ -744,16 +800,7 @@ function createExerciseContent(task) {
     if (task.type === "camera") {
         return `
             <h2>👄 Артикуляциялық жаттығу</h2>
-
-            <div class="media-box">
-                <video id="cameraVideo" autoplay playsinline></video>
-            </div>
-
-            <p>
-                Камера арқылы жаттығуды өзіңіз бақылай аласыз.
-                Бұл автоматты медициналық бағалау емес.
-            </p>
-
+            <video id="cameraVideo" autoplay playsinline></video>
             <button class="primary-btn" onclick="activateCamera()">
                 📷 Камераны қосу
             </button>
@@ -763,17 +810,11 @@ function createExerciseContent(task) {
     if (task.type === "speech") {
         return `
             <h2>🎤 Сөйлеу тапсырмасы</h2>
-
-            <p>Жауабыңызды микрофонға айтыңыз немесе төменге жазыңыз.</p>
-
             <button class="primary-btn" onclick="activateMicrophone()">
-                🎤 Сөйлеуді бастау
+                Сөйлеуді бастау
             </button>
-
-            <textarea id="speechAnswer"
-                placeholder="Жауабыңызды осында жазыңыз..."
-                rows="4"></textarea>
-
+            <textarea id="speechAnswer" rows="4"
+                placeholder="Жауабыңызды жазыңыз"></textarea>
             <p id="speechRecognitionResult"></p>
         `;
     }
@@ -781,11 +822,8 @@ function createExerciseContent(task) {
     if (task.type === "writing") {
         return `
             <h2>✍️ Жазу тапсырмасы</h2>
-
-            <textarea id="writingAnswer"
-                rows="5"
-                placeholder="Жауабыңызды жазыңыз..."></textarea>
-
+            <textarea id="writingAnswer" rows="5"
+                placeholder="Жауабыңызды жазыңыз"></textarea>
             <button class="secondary-btn" onclick="showWritingHelp()">
                 Көмек алу
             </button>
@@ -795,38 +833,23 @@ function createExerciseContent(task) {
     if (task.type === "reading") {
         return `
             <h2>📖 Оқу тапсырмасы</h2>
-
             <div class="info-box">
-                <h3>Оқу материалы</h3>
-                <p id="readingText">
-                    АЛМА – ҚАЛАМ – КІТАП – БАЛА.
-                </p>
+                <p>АЛМА – ҚАЛАМ – КІТАП – БАЛА</p>
             </div>
-
-            <textarea id="readingAnswer"
-                rows="3"
-                placeholder="Оқығаныңыз туралы жауап жазыңыз..."></textarea>
+            <textarea id="readingAnswer" rows="3"
+                placeholder="Жауабыңызды жазыңыз"></textarea>
         `;
     }
 
     if (task.type === "matching") {
         return `
-            <h2>🧩 Сәйкестендіру тапсырмасы</h2>
-
+            <h2>🧩 Сәйкестендіру</h2>
             <div class="exercise-options">
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, true)">🍎 Алма</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">⚽ Доп</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">📚 Кітап</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">🥄 Қасық</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,true)">🍎 Алма</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">⚽ Доп</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">📚 Кітап</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">🥄 Қасық</button>
             </div>
-
             <p id="answerFeedback"></p>
         `;
     }
@@ -834,25 +857,15 @@ function createExerciseContent(task) {
     if (task.type === "listening") {
         return `
             <h2>👂 Тыңдау тапсырмасы</h2>
-
             <button class="primary-btn" onclick="speakInstruction()">
-                🔊 Аудионы тыңдау
+                🔊 Тыңдау
             </button>
-
             <div class="exercise-options">
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, true)">🍎 Алма</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">⚽ Доп</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">📚 Кітап</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">🥄 Қасық</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,true)">🍎 Алма</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">⚽ Доп</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">📚 Кітап</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">🥄 Қасық</button>
             </div>
-
             <p id="answerFeedback"></p>
         `;
     }
@@ -860,20 +873,12 @@ function createExerciseContent(task) {
     if (task.type === "choice") {
         return `
             <h2>🎯 Таңдау тапсырмасы</h2>
-
-            <p>Берілген нұсқалардың ішінен дұрыс жауапты таңдаңыз.</p>
-
+            <p>Берілген нұсқалардың бірін таңдаңыз.</p>
             <div class="exercise-options">
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, true)">Бірінші жауап</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">Екінші жауап</button>
-
-                <button class="secondary-btn"
-                    onclick="selectAnswer(this, false)">Үшінші жауап</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,true)">Бірінші жауап</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">Екінші жауап</button>
+                <button class="secondary-btn" onclick="selectAnswer(this,false)">Үшінші жауап</button>
             </div>
-
             <p id="answerFeedback"></p>
         `;
     }
@@ -881,11 +886,7 @@ function createExerciseContent(task) {
     if (task.type === "ordering") {
         return `
             <h2>🔢 Ретін анықтаңыз</h2>
-
-            <p>Әрекеттердің дұрыс ретін жазыңыз.</p>
-
-            <textarea id="orderAnswer"
-                rows="3"
+            <textarea id="orderAnswer" rows="3"
                 placeholder="1. ... 2. ... 3. ..."></textarea>
         `;
     }
@@ -893,11 +894,6 @@ function createExerciseContent(task) {
     if (task.type === "drawing") {
         return `
             <h2>✏️ Көру-қимыл тапсырмасы</h2>
-
-            <div class="info-box">
-                <p>Тапсырманы берілген сурет немесе карточка бойынша орындаңыз.</p>
-            </div>
-
             <label>
                 <input type="checkbox" id="drawingDone">
                 Тапсырманы орындадым
@@ -908,15 +904,8 @@ function createExerciseContent(task) {
     if (task.type === "movement") {
         return `
             <h2>🤲 Қимыл тапсырмасы</h2>
-
-            <p>Карточкадағы қимылдарды кезекпен орындаңыз.</p>
-
-            <div style="font-size:65px;margin:25px">🤲 👏 ✋</div>
-
-            <button class="secondary-btn"
-                onclick="this.textContent='Қимыл орындалды ✓'">
-                Қимылды орындадым
-            </button>
+            <div style="font-size:65px">🤲 👏 ✋</div>
+            <p>Қимылдарды кезекпен орындаңыз.</p>
         `;
     }
 
@@ -925,7 +914,7 @@ function createExerciseContent(task) {
 
 
 // ==================================================
-// ЖАУАПТЫ ТАҢДАУ
+// 10. ЖАУАПТЫ ТАҢДАУ
 // ==================================================
 
 function selectAnswer(button, isCorrect) {
@@ -933,33 +922,29 @@ function selectAnswer(button, isCorrect) {
 
     if (!feedback) return;
 
-    const buttons = button.parentElement.querySelectorAll("button");
-
-    buttons.forEach(item => {
-        item.disabled = true;
-    });
-
-    if (isCorrect) {
-        feedback.innerHTML = "✅ Жауап таңдалды. Логопед нәтижені растай алады.";
-        feedback.style.color = "#21845e";
-    } else {
-        feedback.innerHTML = "🔄 Бұл жауапты қайта қарастырыңыз.";
-        feedback.style.color = "#d18a20";
-
-        buttons.forEach(item => {
-            item.disabled = false;
-        });
-    }
-
     platformData.attempts[currentTask.id] =
         (platformData.attempts[currentTask.id] || 0) + 1;
 
     saveData();
+
+    if (isCorrect) {
+        feedback.textContent = "✅ Жауап дұрыс таңдалды!";
+        feedback.style.color = "green";
+
+        button.style.background = "#c8f7dc";
+
+        button.parentElement.querySelectorAll("button").forEach(item => {
+            item.disabled = true;
+        });
+    } else {
+        feedback.textContent = "🔄 Қайта ойланып көріңіз.";
+        feedback.style.color = "orange";
+    }
 }
 
 
 // ==================================================
-// ТЫНЫС АЛУ АНИМАЦИЯСЫ
+// 11. ТЫНЫС АЛУ АНИМАЦИЯСЫ
 // ==================================================
 
 function moveBreathObject() {
@@ -968,28 +953,33 @@ function moveBreathObject() {
 
     if (!object) return;
 
-    object.style.transform = "translateX(100px) scale(1.2)";
+    object.style.transform = "translateX(100px)";
     object.style.transition = "1s ease";
 
     if (status) {
-        status.textContent = "Жақсы! Қозғалыс орындалды.";
+        status.textContent = "Қозғалыс орындалды!";
     }
 }
 
 
 // ==================================================
-// МИКРОФОН
+// 12. МИКРОФОН
 // ==================================================
 
 function activateMicrophone() {
-
     const SpeechRecognition =
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-        alert("Бұл браузерде сөйлеуді тану қолжетімсіз. Chrome браузерін қолданып көріңіз.");
+        alert("Бұл браузерде сөйлеуді тану қолжетімсіз.");
         return;
+    }
+
+    if (recognition) {
+        try {
+            recognition.stop();
+        } catch (error) {}
     }
 
     recognition = new SpeechRecognition();
@@ -1019,21 +1009,31 @@ function activateMicrophone() {
     };
 
     recognition.onerror = function() {
-        alert("Сөйлеуді тану кезінде қате пайда болды. Қайталап көріңіз.");
+        console.warn("Сөйлеуді тану қатесі.");
     };
 
-    recognition.start();
+    try {
+        recognition.start();
+    } catch (error) {
+        console.warn(error);
+    }
 }
 
 
 // ==================================================
-// КАМЕРА
+// 13. КАМЕРА
 // ==================================================
 
 async function activateCamera() {
     try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+            alert("Камера бұл браузерде қолжетімсіз.");
+            return;
+        }
+
         cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: true
+            video: true,
+            audio: false
         });
 
         const video = document.getElementById("cameraVideo");
@@ -1043,13 +1043,41 @@ async function activateCamera() {
         }
 
     } catch (error) {
-        alert("Камераға рұқсат берілмеді немесе камера қолжетімсіз.");
+        alert("Камераға рұқсат берілмеді.");
     }
 }
 
 
 // ==================================================
-// КӨМЕК ЖҮЙЕСІ
+// 14. МЕДИА ҚҰРАЛДАРЫН ТОҚТАТУ
+// ==================================================
+
+function stopMedia() {
+    if (recognition) {
+        try {
+            recognition.stop();
+        } catch (error) {}
+        recognition = null;
+    }
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+
+    if (microphoneStream) {
+        microphoneStream.getTracks().forEach(track => track.stop());
+        microphoneStream = null;
+    }
+
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+    }
+}
+
+
+// ==================================================
+// 15. КӨМЕК
 // ==================================================
 
 function showExerciseHelp() {
@@ -1058,30 +1086,31 @@ function showExerciseHelp() {
     alert(
         "💡 КӨМЕК\n\n" +
         currentTask.instruction +
-        "\n\nЛогопед тапсырманы қосымша түсіндіре алады."
+        "\n\nЛогопед қосымша түсіндіре алады."
     );
 }
 
 function showWritingHelp() {
     alert(
         "💡 Кеңес:\n" +
-        "Сөзді немесе сөйлемді асықпай ойланып жазыңыз. " +
-        "Қажет болса, логопедтің көмегін пайдаланыңыз."
+        "Сөзді немесе сөйлемді асықпай ойланып жазыңыз."
     );
 }
 
 
 // ==================================================
-// АУДИО
+// 16. АУДИО
 // ==================================================
 
 function speakInstruction() {
     if (!currentTask) return;
 
     if (!("speechSynthesis" in window)) {
-        alert("Аудио оқу функциясы бұл браузерде қолжетімсіз.");
+        alert("Аудио оқу функциясы қолжетімсіз.");
         return;
     }
+
+    window.speechSynthesis.cancel();
 
     const speech = new SpeechSynthesisUtterance(
         currentTask.instruction
@@ -1095,24 +1124,30 @@ function speakInstruction() {
 
 
 // ==================================================
-// ТАПСЫРМАНЫ АЯҚТАУ
+// 17. ТАПСЫРМАНЫ АЯҚТАУ
 // ==================================================
 
-function completeExercise() {
+function completeExercise(scoreFromModule) {
     if (!currentTask) return;
 
-    const scoreInput = prompt(
-        "Тапсырманың орындалуын бағалаңыз:\n\n" +
-        "3 – өздігінен дұрыс орындады\n" +
-        "2 – қайталап ұсынғаннан кейін орындады\n" +
-        "1 – логопед көмегімен орындады\n" +
-        "0 – орындай алмады\n\n" +
-        "0–3 аралығындағы балды енгізіңіз:"
-    );
+    let score;
 
-    if (scoreInput === null) return;
+    if (scoreFromModule !== undefined) {
+        score = Number(scoreFromModule);
+    } else {
+        const input = prompt(
+            "Тапсырманы бағалаңыз:\n\n" +
+            "3 – өздігінен дұрыс орындады\n" +
+            "2 – қайталаудан кейін орындады\n" +
+            "1 – логопед көмегімен орындады\n" +
+            "0 – орындай алмады\n\n" +
+            "0–3 балын енгізіңіз:"
+        );
 
-    const score = Number(scoreInput);
+        if (input === null) return;
+
+        score = Number(input);
+    }
 
     if (!Number.isInteger(score) || score < 0 || score > 3) {
         alert("0, 1, 2 немесе 3 балын енгізіңіз.");
@@ -1121,10 +1156,10 @@ function completeExercise() {
 
     const oldScore = platformData.scores[currentTask.id];
 
-    platformData.scores[currentTask.id] = score;
-
     const alreadyCompleted =
         platformData.completed.includes(currentTask.id);
+
+    platformData.scores[currentTask.id] = score;
 
     if (!alreadyCompleted) {
         platformData.completed.push(currentTask.id);
@@ -1146,10 +1181,10 @@ function completeExercise() {
     if (result) {
         result.innerHTML = `
             <h3>🌟 Тапсырма аяқталды!</h3>
-            <p>Сіздің нәтижеңіз: ${score}/3 балл</p>
-            <p>Бонус: ${alreadyCompleted ? "Қайта орындағаныңыз үшін қосылмайды" : "+" + currentTask.bonus}</p>
+            <p>Нәтиже: ${score}/3 балл</p>
+            <p>${alreadyCompleted ? "Қайталау: бонус қосылмайды." : "Бонус: +" + currentTask.bonus}</p>
             <p>Жалпы бонус: ${platformData.bonus}</p>
-            <p>Нәтиже логопедтің бақылауына арналған.</p>
+            <p>Нәтиже логопед бақылауына арналған.</p>
         `;
     }
 
@@ -1159,20 +1194,18 @@ function completeExercise() {
 
 
 // ==================================================
-// БОНУС КӨРСЕТКІШІ
+// 18. БОНУС КӨРСЕТКІШІ
 // ==================================================
 
 function updateBonusDisplay() {
-    const counter = document.querySelector(".bonus-counter");
-
-    if (counter) {
+    document.querySelectorAll(".bonus-counter").forEach(counter => {
         counter.textContent = "⭐ " + platformData.bonus + " бонус";
-    }
+    });
 }
 
 
 // ==================================================
-// НӘТИЖЕЛЕР
+// 19. НӘТИЖЕЛЕР
 // ==================================================
 
 function openResults() {
@@ -1188,11 +1221,17 @@ function updateResults() {
     const total = getTotalCount();
     const completed = getCompletedCount();
     const notCompleted = total - completed;
-    const percent = total ? Math.round(completed / total * 100) : 0;
+
+    const percent = total
+        ? Math.round(completed / total * 100)
+        : 0;
 
     const scoreValues = Object.values(platformData.scores);
 
-    const totalScore = scoreValues.reduce((sum, score) => sum + score, 0);
+    const totalScore = scoreValues.reduce(
+        (sum, score) => sum + Number(score || 0),
+        0
+    );
 
     const maxScore = scoreValues.length * 3;
 
@@ -1227,13 +1266,16 @@ function updateResults() {
 
         <div class="stat-card">
             <h3>Жалпы прогресс</h3>
+
             <div class="progress-container">
-                <div class="progress-bar" style="width:${percent}%"></div>
+                <div class="progress-bar"
+                    style="width:${percent}%"></div>
             </div>
+
             <strong>${percent}%</strong>
         </div>
 
-        <div class="stat-card" style="margin-top:20px">
+        <div class="stat-card">
             <h3>Бағалау нәтижесі</h3>
             <p>Жиналған балл: ${totalScore}</p>
             <p>Ең жоғары мүмкін балл: ${maxScore}</p>
@@ -1248,24 +1290,24 @@ function updateResults() {
 
 
 // ==================================================
-// БОНУС ШКАЛАСЫ
+// 20. БОНУС ШКАЛАСЫ
 // ==================================================
+
+const rewards = [
+    { id: "puzzle", name: "Пазл", icon: "🧩", bonus: 100 },
+    { id: "color", name: "Суретті боя", icon: "🎨", bonus: 150 },
+    { id: "difference", name: "Айырмашылықты тап", icon: "🔎", bonus: 200 },
+    { id: "memory", name: "Есте сақта", icon: "🧠", bonus: 250 },
+    { id: "hidden", name: "Жасырын суретті аш", icon: "🎁", bonus: 300 },
+    { id: "balloons", name: "Шарларды жина", icon: "🎈", bonus: 350 }
+];
 
 function renderBonusScale() {
     const container = document.getElementById("bonusScale");
 
     if (!container) return;
 
-    const levels = [
-        { name: "Пазл", bonus: 100, icon: "🧩" },
-        { name: "Суретті боя", bonus: 150, icon: "🎨" },
-        { name: "Айырмашылықты тап", bonus: 200, icon: "🔎" },
-        { name: "Есте сақта", bonus: 250, icon: "🧠" },
-        { name: "Жасырын суретті аш", bonus: 300, icon: "🎁" },
-        { name: "Шарларды жина", bonus: 350, icon: "🎈" }
-    ];
-
-    container.innerHTML = levels.map(item => {
+    container.innerHTML = rewards.map(item => {
         const unlocked = platformData.bonus >= item.bonus;
 
         return `
@@ -1281,32 +1323,25 @@ function renderBonusScale() {
 
 
 // ==================================================
-// СЫЙЛЫҚ ОЙЫНДАРЫ
+// 21. СЫЙЛЫҚ ОЙЫНДАРЫ
 // ==================================================
-
-const rewards = [
-    { id: "puzzle", name: "Пазл", icon: "🧩", bonus: 100 },
-    { id: "color", name: "Суретті боя", icon: "🎨", bonus: 150 },
-    { id: "difference", name: "Айырмашылықты тап", icon: "🔎", bonus: 200 },
-    { id: "memory", name: "Есте сақта", icon: "🧠", bonus: 250 },
-    { id: "hidden", name: "Жасырын суретті аш", icon: "🎁", bonus: 300 },
-    { id: "balloons", name: "Шарларды жина", icon: "🎈", bonus: 350 }
-];
 
 function renderRewards() {
     const container = document.getElementById("rewardsContainer");
 
     if (!container) return;
 
-    container.innerHTML = rewards.map(reward => {
-        const unlocked = platformData.bonus >= reward.bonus;
-
+    rewards.forEach(reward => {
         if (
-            unlocked &&
+            platformData.bonus >= reward.bonus &&
             !platformData.unlockedRewards.includes(reward.id)
         ) {
             platformData.unlockedRewards.push(reward.id);
         }
+    });
+
+    container.innerHTML = rewards.map(reward => {
+        const unlocked = platformData.bonus >= reward.bonus;
 
         return `
             <div class="reward-card ${unlocked ? "unlocked" : "locked"}">
@@ -1338,28 +1373,26 @@ function renderRewards() {
 function openReward(id) {
     const reward = rewards.find(item => item.id === id);
 
-    if (!reward) return;
-
-    if (platformData.bonus < reward.bonus) {
+    if (!reward || platformData.bonus < reward.bonus) {
         alert("Бұл ойын әлі ашылған жоқ.");
         return;
     }
 
-    const games = {
-        puzzle: "🧩 Пазл ойыны\n\nСуретті бөліктерден құрастыру.",
-        color: "🎨 Суретті боя\n\nӨзіңізге ұнайтын түстерді таңдаңыз.",
-        difference: "🔎 Айырмашылықты тап\n\nЕкі суретті салыстырыңыз.",
-        memory: "🧠 Есте сақта\n\nСуреттерді есте сақтап, қайта таңдаңыз.",
-        hidden: "🎁 Жасырын суретті аш\n\nЖасырын бөліктерді ашыңыз.",
-        balloons: "🎈 Шарларды жина\n\nШарларды басып, жинаңыз."
+    const gameNames = {
+        puzzle: "🧩 Пазл ойыны",
+        color: "🎨 Суретті боя",
+        difference: "🔎 Айырмашылықты тап",
+        memory: "🧠 Есте сақта",
+        hidden: "🎁 Жасырын суретті аш",
+        balloons: "🎈 Шарларды жина"
     };
 
-    alert(games[id] || "Ойын ашылды!");
+    alert(gameNames[id] + "\n\nОйын ашылды!");
 }
 
 
 // ==================================================
-// ӘР ТАПСЫРМАНЫҢ БАЛЛЫ
+// 22. ӘР ТАПСЫРМАНЫҢ БАЛЛЫ
 // ==================================================
 
 function renderTaskScores() {
@@ -1369,6 +1402,7 @@ function renderTaskScores() {
 
     let html = `
         <div class="stat-card" style="margin-top:20px">
+
             <h2>Әр тапсырманың нәтижесі</h2>
 
             <table>
@@ -1379,6 +1413,7 @@ function renderTaskScores() {
                         <th>Нәтиже</th>
                     </tr>
                 </thead>
+
                 <tbody>
     `;
 
@@ -1388,9 +1423,14 @@ function renderTaskScores() {
         html += `
             <tr>
                 <td>${task.title}</td>
-                <td>${score === undefined ? "–" : score + "/3"}</td>
+
                 <td>
-                    ${score === undefined
+                    ${score === undefined ? "–" : score + "/3"}
+                </td>
+
+                <td>
+                    ${
+                        score === undefined
                         ? "Бағаланбаған"
                         : score === 3
                             ? "Өздігінен орындады"
@@ -1416,7 +1456,7 @@ function renderTaskScores() {
 
 
 // ==================================================
-// БАСТАПҚЫ НӘТИЖЕНІ САҚТАУ
+// 23. БАСТАПҚЫ НӘТИЖЕНІ САҚТАУ
 // ==================================================
 
 function saveInitialResults() {
@@ -1427,6 +1467,7 @@ function saveInitialResults() {
             completed: platformData.completed.filter(id =>
                 sections[sectionId].tasks.some(task => task.id === id)
             ).length,
+
             scores: {}
         };
 
@@ -1448,7 +1489,7 @@ function saveInitialResults() {
 
 
 // ==================================================
-// ЭЛЕКТРОНДЫ СӨЙЛЕУ КАРТАСЫ
+// 24. СӨЙЛЕУ КАРТАСЫНА АРНАЛҒАН ДЕРЕКТЕР
 // ==================================================
 
 const speechCardSections = [
@@ -1531,6 +1572,11 @@ const speechSkills = {
     ]
 };
 
+
+// ==================================================
+// 25. СӨЙЛЕУ КАРТАСЫН КӨРСЕТУ
+// ==================================================
+
 function renderSpeechCard() {
     const container = document.getElementById("speechCardContainer");
 
@@ -1539,10 +1585,7 @@ function renderSpeechCard() {
     let html = `
         <h1>«Тілашар» логопедиялық кабинетіне арналған сөйлеу картасы</h1>
 
-        <p>
-            Афазиясы бар ересектердің сөйлеу дағдыларын
-            бақылау және түзету динамикасын тіркеу.
-        </p>
+        <p>Афазиясы бар ересектердің сөйлеу дағдыларын бақылау картасы.</p>
 
         <div class="warning-box">
             Бағалау шкаласы:
@@ -1551,7 +1594,7 @@ function renderSpeechCard() {
             <br>1 – логопед көмегімен орындады
             <br>0 – орындай алмады
             <br><br>
-            Бұл шкала афазияның ауырлығын анықтамайды.
+            Бұл шкала медициналық диагноз қоюға арналмаған.
         </div>
     `;
 
@@ -1566,6 +1609,7 @@ function renderSpeechCard() {
 
             html += `
                 <label>${field[0]}</label>
+
                 ${
                     field[1] === "textarea"
                     ? `<textarea id="${key}" rows="3"></textarea>`
@@ -1588,7 +1632,6 @@ function renderSpeechCard() {
 
             html += `
                 <div class="rating-row">
-
                     <span>${skill}</span>
 
                     <select id="${key}">
@@ -1598,14 +1641,11 @@ function renderSpeechCard() {
                         <option value="1">1 балл</option>
                         <option value="0">0 балл</option>
                     </select>
-
                 </div>
 
-                <textarea
-                    id="${key}_note"
+                <textarea id="${key}_note"
                     rows="2"
-                    placeholder="Логопедтің ескертпесі..."
-                ></textarea>
+                    placeholder="Логопедтің ескертпесі..."></textarea>
             `;
         });
 
@@ -1616,16 +1656,13 @@ function renderSpeechCard() {
         <div class="card-section">
             <h2>4. Қарым-қатынас дағдылары</h2>
 
-            <p>Қарым-қатынас тәсілдерін белгілеңіз:</p>
-
             <label><input type="checkbox" id="comm_speech"> Ауызша сөйлеу</label>
             <label><input type="checkbox" id="comm_gesture"> Ым-ишара</label>
             <label><input type="checkbox" id="comm_writing"> Жазу</label>
             <label><input type="checkbox" id="comm_picture"> Суреттер мен карточкалар</label>
             <label><input type="checkbox" id="comm_board"> Коммуникативтік тақта</label>
 
-            <textarea id="communicationNote"
-                rows="3"
+            <textarea id="communicationNote" rows="3"
                 placeholder="Қосымша ескертпе..."></textarea>
         </div>
 
@@ -1681,11 +1718,6 @@ function renderSpeechCard() {
         <div class="card-section">
             <h2>7. Даму динамикасы</h2>
 
-            <p>
-                Бастапқы, аралық және қорытынды бақылау нәтижелерін
-                салыстыруға арналған бөлім.
-            </p>
-
             <div id="dynamicsResults"></div>
 
             <label>Динамика туралы қорытынды</label>
@@ -1712,7 +1744,7 @@ function renderSpeechCard() {
 
 
 // ==================================================
-// СӨЙЛЕУ КАРТАСЫН САҚТАУ
+// 26. СӨЙЛЕУ КАРТАСЫН САҚТАУ
 // ==================================================
 
 function saveSpeechCard() {
@@ -1725,18 +1757,16 @@ function saveSpeechCard() {
     const card = {};
 
     fields.forEach(field => {
-        if (field.type === "checkbox") {
-            card[field.id] = field.checked;
-        } else {
-            card[field.id] = field.value;
-        }
+        card[field.id] = field.type === "checkbox"
+            ? field.checked
+            : field.value;
     });
 
     platformData.speechCard = card;
 
     saveData();
 
-    alert("Сөйлеу картасы сәтті сақталды!");
+    alert("Сөйлеу картасы сақталды!");
 }
 
 function loadSpeechCard() {
@@ -1748,7 +1778,7 @@ function loadSpeechCard() {
         if (!field) return;
 
         if (field.type === "checkbox") {
-            field.checked = value;
+            field.checked = Boolean(value);
         } else {
             field.value = value;
         }
@@ -1757,7 +1787,7 @@ function loadSpeechCard() {
 
 
 // ==================================================
-// ДАМУ ДИНАМИКАСЫ
+// 27. ДАМУ ДИНАМИКАСЫ
 // ==================================================
 
 function renderDynamics() {
@@ -1781,14 +1811,14 @@ function renderDynamics() {
         html += `
             <tr>
                 <td>${title}</td>
+
                 <td>
-                    <input type="number"
-                        min="0" max="3"
+                    <input type="number" min="0" max="3"
                         id="dynamic_initial_${index}">
                 </td>
+
                 <td>
-                    <input type="number"
-                        min="0" max="3"
+                    <input type="number" min="0" max="3"
                         id="dynamic_current_${index}">
                 </td>
             </tr>
@@ -1805,7 +1835,7 @@ function renderDynamics() {
 
 
 // ==================================================
-// БАСЫП ШЫҒАРУ
+// 28. БАСЫП ШЫҒАРУ
 // ==================================================
 
 function printSpeechCard() {
@@ -1814,10 +1844,34 @@ function printSpeechCard() {
 
 
 // ==================================================
-// ПЛАТФОРМАНЫ БАСТАПҚЫ КҮЙГЕ КЕЛТІРУ
+// 29. ҚОСЫМША ФУНКЦИЯЛАРДЫ СЫРТҚА ШЫҒАРУ
+// ==================================================
+
+window.openSection = openSection;
+window.openExercise = openExercise;
+window.completeExercise = completeExercise;
+window.updateResults = updateResults;
+window.updateBonusDisplay = updateBonusDisplay;
+window.showExerciseHelp = showExerciseHelp;
+window.backToMain = backToMain;
+window.backToTasks = backToTasks;
+window.openResults = openResults;
+window.enterPlatform = enterPlatform;
+window.openCabinet = openCabinet;
+window.activateMicrophone = activateMicrophone;
+window.activateCamera = activateCamera;
+window.stopMedia = stopMedia;
+window.speakInstruction = speakInstruction;
+window.selectAnswer = selectAnswer;
+window.saveData = saveData;
+
+
+// ==================================================
+// 30. САЙТТЫ ІСКЕ ҚОСУ
 // ==================================================
 
 document.addEventListener("DOMContentLoaded", function() {
+
     updateBonusDisplay();
 
     const initialPage = document.getElementById("homePage");
@@ -1826,7 +1880,8 @@ document.addEventListener("DOMContentLoaded", function() {
         showPage("homePage");
     }
 
-    if (platformData.bonus >= 100) {
-        renderRewards();
-    }
+    renderRewards();
+
+    updateResults();
+
 });
