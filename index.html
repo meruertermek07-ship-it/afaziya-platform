@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Афазиясы бар ересектерге арналған цифрлық логопедиялық түзету-дамыту платформасы">
+    <title>Афазия | Сөйлеуді қалпына келтіру</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="header">
+    <div class="logo">✦ АФАЗИЯ</div>
+
+    <div class="header-right">
+        <div class="bonus-counter">
+            ⭐ <span id="bonusTop">0</span> бонус
+        </div>
+
+        <button onclick="openCabinet()">
+            Логопед кабинеті
+        </button>
+    </div>
+</header>
+
+<!-- БАСТЫ БЕТ -->
+
+<section id="homePage" class="home-page">
+
+    <div class="hero-content">
+
+        <p class="subtitle">
+            ЦИФРЛЫҚ ТҮЗЕТУ – ДАМЫТУ ҚҰРАЛЫ
+        </p>
+
+        <h1>
+            АФАЗИЯ
+        </h1>
+
+        <h2>
+            Сөйлеу әлеміне жаңа қадам
+        </h2>
+
+        <p>
+            Афазиясы бар ересектердің сөйлеу, түсіну,
+            оқу және жазу дағдыларын қалпына келтіруге
+            арналған интерактивті платформа.
+        </p>
+
+        <button class="start-button" onclick="enterPlatform()">
+            БАСТАУ →
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- НЕГІЗГІ ПЛАТФОРМА -->
+
+<section id="mainPage" class="main-page hidden">
+
+    <div class="page-heading">
+
+        <p>ЦИФРЛЫҚ ТҮЗЕТУ – ДАМЫТУ ҚҰРАЛЫ</p>
+
+        <h1>Жаттығулар платформасы</h1>
+
+        <span>
+            Өзіңізге қажетті бөлімді таңдаңыз
+        </span>
+
+    </div>
+
+
+    <div class="sections-grid">
+
+        <div class="section-card" onclick="openSection('breathing')">
+            <div class="section-icon">🌬️</div>
+            <h3>1. Тыныс алу</h3>
+            <p>Тыныс алу жаттығулары</p>
+        </div>
+
+        <div class="section-card" onclick="openSection('articulation')">
+            <div class="section-icon">👄</div>
+            <h3>2. Артикуляция</h3>
+            <p>Артикуляциялық жаттығулар</p>
+        </div>
+
+        <div class="section-card" onclick="openSection('vocabulary')">
+            <div class="section-icon">🧺</div>
+            <h3>3. Сөздік қор</h3>
+            <p>Сөздерді еске түсіру және атау</p>
+        </div>
+
+        <div class="section-card" onclick="openSection('understanding')">
+            <div class="section-icon">👂</div>
+            <h3>4. Сөйлеуді түсіну</h3>
+            <p>Сөздер мен нұсқауларды түсіну</p>
+        </div>
+
+        <div class="section-card" onclick="openSection('speech')">
+            <div class="section-icon">🗣️</div>
+            <h3>5. Сөйлеуді қалыптастыру</h3>
+            <p>Сөйлеу дағдыларын дамыту</p>
+        </div>
+
+        <div class="section-card" onclick="openSection('reading')">
+            <div class="section-icon">📖</div>
+            <h3>6. Оқу және жазу</h3>
+            <p>Оқу және жазу дағдылары</p>
+        </div>
+
+        <div class="section-card" onclick="openSection('logorhythmics')">
+            <div class="section-icon">🎵</div>
+            <h3>7. Логоритмика</h3>
+            <p>Қимыл мен ырғақты үйлестіру</p>
+        </div>
+
+        <div class="section-card" onclick="openResults()">
+            <div class="section-icon">🏆</div>
+            <h3>8. Нәтижелер</h3>
+            <p>Жетістіктер мен даму динамикасы</p>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ТАПСЫРМАЛАР БӨЛІМІ -->
+
+<section id="tasksPage" class="content-page hidden">
+
+    <button class="back-button" onclick="backToMain()">
+        ← Артқа
+    </button>
+
+    <h1 id="sectionTitle"></h1>
+
+    <div id="tasksContainer" class="tasks-grid"></div>
+
+</section>
+
+
+<!-- ЖАТТЫҒУ ОРЫНДАУ БЕТІ -->
+
+<section id="exercisePage" class="content-page hidden">
+
+    <button class="back-button" onclick="backToTasks()">
+        ← Артқа
+    </button>
+
+    <div class="exercise-container">
+
+        <h1 id="exerciseTitle"></h1>
+
+        <div class="exercise-information">
+
+            <h3>Мақсаты</h3>
+            <p id="exerciseGoal"></p>
+
+            <h3>Орындалу тәртібі</h3>
+            <p id="exerciseInstruction"></p>
+
+            <h3>Дидактикалық материал</h3>
+            <div id="exerciseMaterials"></div>
+
+            <h3>Ескерту</h3>
+            <p id="exerciseWarning"></p>
+
+        </div>
+
+        <div id="exerciseContent" class="exercise-content"></div>
+
+        <div class="exercise-actions">
+
+            <button onclick="showExerciseHelp()">
+                Көмек
+            </button>
+
+            <button onclick="activateMicrophone()">
+                🎙 Микрофон
+            </button>
+
+            <button onclick="activateCamera()">
+                📷 Камера
+            </button>
+
+            <button onclick="completeExercise()">
+                ✓ Орындадым
+            </button>
+
+        </div>
+
+        <div id="exerciseResult"></div>
+
+    </div>
+
+</section>
+
+
+<!-- НӘТИЖЕЛЕР -->
+
+<section id="resultsPage" class="content-page hidden">
+
+    <button class="back-button" onclick="backToMain()">
+        ← Артқа
+    </button>
+
+    <h1>Нәтижелер</h1>
+
+    <div id="statistics"></div>
+
+    <div id="bonusScale"></div>
+
+    <h2>Сыйлықтар дүкені 🎁</h2>
+
+    <div id="rewardsContainer"></div>
+
+</section>
+
+
+<!-- ЛОГОПЕД КАБИНЕТІ -->
+
+<section id="cabinetPage" class="content-page hidden">
+
+    <button class="back-button" onclick="backToMain()">
+        ← Артқа
+    </button>
+
+    <h1>«Тілашар» логопедиялық кабинеті</h1>
+
+    <h2>Электронды сөйлеу картасы</h2>
+
+    <p>
+        Афазиясы бар ересектердің сөйлеу дағдыларын
+        бақылау және түзету динамикасын тіркеу.
+    </p>
+
+    <div id="speechCardContainer"></div>
+
+</section>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
